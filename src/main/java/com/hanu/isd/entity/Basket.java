@@ -1,0 +1,53 @@
+package com.hanu.isd.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+
+import java.sql.Timestamp;
+import java.util.Set;
+
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@Entity(name = "basket")
+public class Basket {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    Long id;
+
+    @Column(name = "name", length = 255, nullable = false)
+    String name;
+
+    @Column(name = "description", length = 255, nullable = false)
+    String description;
+
+    @Column(name = "price")
+    Double price;
+
+    @Column(name = "quantity")
+    int quantity;
+
+    @Column(name = "created_at", insertable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    Timestamp createdAt;
+
+    @Column(name = "status")
+    int status;
+
+    @ManyToOne
+    @JoinColumn(name = "category_id", nullable = false, referencedColumnName = "id")
+    BasketCategory category;
+    @ManyToOne
+    @JoinColumn(name = "basketshell_id", nullable = true, referencedColumnName = "id")
+    BasketShell basketShell;
+
+    @OneToMany(mappedBy = "basket", cascade = CascadeType.ALL, orphanRemoval = true)
+    Set<BasketImage> images;
+    @OneToMany(mappedBy = "basket", cascade = CascadeType.ALL, orphanRemoval = true)
+    Set<CartItem> cartItems;
+    @OneToMany(mappedBy = "basket", cascade = CascadeType.ALL, orphanRemoval = true)
+    Set<Item> items; // Thêm danh sách item
+}

@@ -1,0 +1,28 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+spring:
+  datasource:
+    url: ${DBMS_CONNECTION:jdbc:mysql://localhost:3306/tet_basket_project}
+    driverClassName: "com.mysql.cj.jdbc.Driver"
+    password: ${DBMS_PASSWORD}
+    username: ${DBMS_USERNAME}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+jwt:
+  signerKey: ${jwt_signer_key}
+  valid-duration: 3600 # in second
+  refreshable-duration: 36000 # in seconds
+
+cloudinary:
+  cloud_name: ${cloud_name}
+  api_key: ${api_key}
+  api_secret: ${api_secret}
+
+email:
+  email_key: ${email_key}
