@@ -194,5 +194,24 @@ public class BasketService {
         return basket.stream().map(basketMapper::toBasketResponse).toList();
     }
 
+    //Lọc basket
+    public PaginatedResponse<BasketResponse> getAllBasketByName(
+            int page, int size,
+            String name){
+        PageRequest pageRequest = PageRequest.of(page,size);
+        Page<Basket> basketPage =
+                basketRepository.findByName(name, pageRequest);
+        List<BasketResponse> basketResponses = basketPage.getContent().stream().map(basketMapper::toBasketResponse).toList();
+        return PaginatedResponse.<BasketResponse>builder()
+                .totalItems((int)(basketPage.getTotalElements()))
+                .totalPages(basketPage.getTotalPages())
+                .currentPage(basketPage.getNumber())
+                .pageSize(basketPage.getSize())
+                .hasNextPage(basketPage.hasNext())
+                .hasPreviousPage(basketPage.hasPrevious())
+                .elements(basketResponses)
+                .build();
+    }
+
 
 }

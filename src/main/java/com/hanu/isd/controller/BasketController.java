@@ -87,5 +87,16 @@ public class BasketController {
                 .build();
     }
 
+    @GetMapping("/getBasketByName")
+    public ApiResponse<PaginatedResponse<BasketResponse>> getBasketByName(@RequestParam(defaultValue = "1") int page,
+                                                                          @RequestParam(defaultValue = "4") int size,
+                                                                          @RequestParam(required = false) String name){
+        int adjustedPage = Math.max(page - 1, 0);
+        var baskets = basketService.getAllBasketByName(adjustedPage, size, name);
+        return ApiResponse.<PaginatedResponse<BasketResponse>>builder()
+                .result(baskets)
+                .build();
+    }
+
 
 }

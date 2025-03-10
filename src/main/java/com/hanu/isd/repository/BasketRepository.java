@@ -23,4 +23,12 @@ public interface BasketRepository extends JpaRepository<Basket, Long> {
                                                         @Param("categoryId") Long categoryId,
                                                         @Param("status") Integer status,
                                                         Pageable pageable);
+
+    @Query(value = "SELECT * FROM basket b WHERE (:name IS NOT NULL AND b.name LIKE %:name%)", nativeQuery = true)
+    Page<Basket> findByName(@Param("name") String name, Pageable pageable);
+
+
+
+
+
 }
