@@ -3,6 +3,8 @@ package com.hanu.isd.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.sql.Timestamp;
 import java.util.Set;
@@ -38,10 +40,13 @@ public class Basket {
     int status;
 
     @ManyToOne
-    @JoinColumn(name = "category_id", nullable = false, referencedColumnName = "id")
+    @JoinColumn(name = "category_id", referencedColumnName = "id", nullable = true, foreignKey = @ForeignKey(ConstraintMode.CONSTRAINT))
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     BasketCategory category;
+
     @ManyToOne
     @JoinColumn(name = "basketshell_id", nullable = true, referencedColumnName = "id")
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     BasketShell basketShell;
 
     @OneToMany(mappedBy = "basket", cascade = CascadeType.ALL, orphanRemoval = true)

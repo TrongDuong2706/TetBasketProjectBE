@@ -39,4 +39,16 @@ public class BasketShellController {
                 .result(basketShellService.getOneBasketShell(basketShellId))
                 .build();
     }
+    @PutMapping("/{basketShellId}")
+    ApiResponse<BasketShellResponse> updateBasketShell(@PathVariable Long basketShellId,@RequestBody BasketShellRequest request){
+        return ApiResponse.<BasketShellResponse>builder()
+                .result(basketShellService.updateBasketShell(basketShellId, request))
+                .build();
+    }
+    @DeleteMapping("/{basketShellId}")
+    ApiResponse<String> deleteBasketShell(@PathVariable Long basketShellId){
+        return ApiResponse.<String>builder()
+                .result(basketShellService.deleteBasketShell(basketShellId))
+                .build();
+    }
 }

@@ -5,22 +5,23 @@ import com.hanu.isd.dto.email.request.Recipient;
 import com.hanu.isd.dto.email.request.SendEmailRequest;
 import com.hanu.isd.dto.request.ApplyVoucherRequest;
 import com.hanu.isd.dto.request.OrderRequest;
-import com.hanu.isd.dto.response.ApplyVoucherResponse;
-import com.hanu.isd.dto.response.OrderResponse;
-import com.hanu.isd.entity.Order;
-import com.hanu.isd.entity.Voucher;
-import com.hanu.isd.repository.OrderRepository;
-import com.hanu.isd.repository.VoucherRepository;
+import com.hanu.isd.dto.response.*;
+import com.hanu.isd.entity.*;
+import com.hanu.isd.exception.AppException;
+import com.hanu.isd.exception.ErrorCode;
+import com.hanu.isd.repository.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
 import java.util.Date;
-import java.util.Optional;
-
-
-
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -28,71 +29,95 @@ import java.util.Optional;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class OrderService {
     OrderRepository orderRepository;
+    OrderItemRepository orderItemRepository;
+    CartRepository cartRepository;
+    CartItemRepository cartItemRepository;
     VoucherRepository voucherRepository;
     VoucherService voucherService;
     EmailService emailService;
 
+    @Transactional
     public OrderResponse createOrder(OrderRequest request) {
         Double totalAmount = request.getTotalAmount();
-        Double shippingFee = 30000.0; // Mặc định phí ship 30K
+        Double shippingFee = 30000.0;
         Double discountAmount = 0.0;
-        Double finalAmount = totalAmount + shippingFee; // Cộng phí ship trước khi áp dụng voucher
+        Double finalAmount = totalAmount + shippingFee;
         String appliedVoucherCode = null;
 
         log.info("Bắt đầu xử lý đơn hàng cho userId: {}", request.getUserId());
 
-        // Kiểm tra nếu người dùng có nhập voucher
         if (request.getVoucherCode() != null && !request.getVoucherCode().isEmpty()) {
-            log.info("Người dùng nhập voucher: {}", request.getVoucherCode());
-
-            // Gọi applyVoucher từ VoucherService và truyền phí ship vào
             ApplyVoucherResponse voucherResponse = voucherService.applyVoucher(
                     new ApplyVoucherRequest(request.getVoucherCode(), totalAmount),
-                    shippingFee // Truyền phí ship để tính tổng đúng
+                    shippingFee
             );
 
             if (voucherResponse.getDiscountAmount() > 0) {
                 discountAmount = voucherResponse.getDiscountAmount();
-                finalAmount = voucherResponse.getNewOrderAmount(); // Giá trị sau khi giảm
+                finalAmount = voucherResponse.getNewOrderAmount();
                 appliedVoucherCode = voucherResponse.getVoucherCode();
-                log.info("Voucher hợp lệ. Giảm giá: {}, Tổng tiền mới (sau ship): {}", discountAmount, finalAmount);
-            } else {
-                log.warn("Voucher không hợp lệ: {}", voucherResponse.getMessage());
             }
         }
 
-        log.info("Tạo đơn hàng với tổng tiền cuối cùng: {}", finalAmount);
+        // ✅ Lấy giỏ hàng của user
+        Cart cart = cartRepository.findByUserId(request.getUserId())
+                .orElseThrow(() -> new RuntimeException("Giỏ hàng không tồn tại"));
 
-        // Tạo đối tượng Order
-        Order order = new Order();
-        order.setUserId(request.getUserId());
-        order.setTotalAmount(totalAmount);
-        order.setFinalAmount(finalAmount); // Tổng cuối cùng đã tính ship + giảm giá
-        order.setVoucherCode(appliedVoucherCode);
-        order.setDiscountAmount(discountAmount);
-        order.setShippingFee(shippingFee);
-        order.setOrderStatus(OrderStatus.PENDING);
-        order.setOrderDate(new Date());
-        order.setFullName(request.getFullName());
-        order.setEmail(request.getEmail());
-        order.setPhoneNumber(request.getPhoneNumber());
-        order.setAddress(request.getAddress());
+        List<CartItem> cartItems = cartItemRepository.findByCart(cart);
+        if (cartItems.isEmpty()) {
+            throw new RuntimeException("Giỏ hàng trống");
+        }
 
-        // Lưu vào database
+        // ✅ Tạo Order
+        Order order = Order.builder()
+                .userId(request.getUserId())
+                .totalAmount(totalAmount)
+                .finalAmount(finalAmount)
+                .voucherCode(appliedVoucherCode)
+                .discountAmount(discountAmount)
+                .shippingFee(shippingFee)
+                .orderStatus(OrderStatus.PENDING)
+                .orderDate(new Date())
+                .fullName(request.getFullName())
+                .email(request.getEmail())
+                .phoneNumber(request.getPhoneNumber())
+                .address(request.getAddress())
+                .build();
+
         order = orderRepository.save(order);
 
+        // ✅ Chuyển CartItem sang OrderItem
+        for (CartItem cartItem : cartItems) {
+            OrderItem orderItem = OrderItem.builder()
+                    .order(order)
+                    .basket(cartItem.getBasket())
+                    .quantity(cartItem.getQuantity())
+                    .priceAtOrderTime(cartItem.getBasket().getPrice())
+                    .build();
+            orderItemRepository.save(orderItem);
+        }
+
+        // ✅ Xóa cartItems trước khi xóa giỏ hàng
+        log.info("Danh sách cartItems cần xóa: {}", cartItems);
+        cartItemRepository.deleteAll(cartItems);
+        cartItemRepository.flush();  // Đảm bảo xóa ngay lập tức
+
+        // ✅ Xóa cart
+        cart.getItems().clear();
+        cartRepository.save(cart);
+        cartRepository.delete(cart);
+
+        // ✅ Gửi email xác nhận
         SendEmailRequest sendEmailRequest = SendEmailRequest.builder()
                 .to(Recipient.builder()
                         .name(request.getFullName())
                         .email(request.getEmail())
                         .build())
-                .subject("Thanks for order")
-                .htmlContent("<p>Cảm ơn </p>")
+                .subject("Thanks for your order")
+                .htmlContent("<p>Cảm ơn bạn đã đặt hàng!</p>")
                 .build();
         emailService.sendEmail(sendEmailRequest);
 
-
-        // Trả về response
         return new OrderResponse(
                 order.getId(),
                 order.getUserId(),
@@ -109,6 +134,81 @@ public class OrderService {
                 order.getAddress()
         );
     }
+
+    public PaginatedResponse<OrderResponse> getAllOrder(int page, int size,
+                                                        String fullName, BigDecimal minPrice, BigDecimal maxPrice) {
+        PageRequest pageRequest = PageRequest.of(page, size);
+        Page<Order> orders = orderRepository.findByFullNameAndPriceRange(fullName, minPrice, maxPrice, pageRequest);
+
+        List<OrderResponse> orderResponses = orders.getContent().stream()
+                .map(order -> new OrderResponse(
+                        order.getId(),
+                        order.getUserId(),
+                        order.getTotalAmount(),
+                        order.getFinalAmount(),
+                        order.getVoucherCode(),
+                        order.getDiscountAmount(),
+                        order.getShippingFee(),
+                        (order.getOrderStatus() != null) ? order.getOrderStatus().toString() : "UNKNOWN",
+                        order.getOrderDate(),
+                        order.getFullName(),
+                        order.getEmail(),
+                        order.getPhoneNumber(),
+                        order.getAddress()
+                ))
+                .toList();
+
+        return PaginatedResponse.<OrderResponse>builder()
+                .totalItems((int)(orders.getTotalElements()))
+                .totalPages(orders.getTotalPages())
+                .currentPage(orders.getTotalPages())
+                .pageSize(orders.getSize())
+                .hasNextPage(orders.hasNext())
+                .hasPreviousPage(orders.hasPrevious())
+                .elements(orderResponses)
+                .build();
+    }
+
+    public List<OrderItemResponse> getAllItemByOrderId(Long orderId) {
+        List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
+
+        return orderItems.stream().map(orderItem -> {
+            Basket basket = orderItem.getBasket(); // Lấy giỏ hàng từ order item
+            List<BasketImageResponse> images = basket.getImages().stream()
+                    .map(image -> new BasketImageResponse(image.getImageUrl())) // Ánh xạ ảnh của giỏ hàng
+                    .toList();
+
+            return new OrderItemResponse(
+                    orderItem.getId(),
+                    basket.getId(),
+                    orderItem.getQuantity(),
+                    basket.getDescription(),
+                    basket.getName(),
+                    basket.getPrice(),
+                    images
+            );
+        }).toList();
+    }
+        public OrderResponse getOneOrder(Long orderId){
+            Order order = orderRepository.findById(orderId).orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_EXISTED));
+            return new OrderResponse( order.getId(),
+                    order.getUserId(),
+                    order.getTotalAmount(),
+                    order.getFinalAmount(),
+                    order.getVoucherCode(),
+                    order.getDiscountAmount(),
+                    order.getShippingFee(),
+                    order.getOrderStatus().toString(),
+                    order.getOrderDate(),
+                    order.getFullName(),
+                    order.getEmail(),
+                    order.getPhoneNumber(),
+                    order.getAddress());
+        }
+
+
+
+
 
 
 

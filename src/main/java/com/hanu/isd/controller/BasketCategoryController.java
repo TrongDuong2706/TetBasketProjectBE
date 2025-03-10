@@ -38,4 +38,18 @@ public class BasketCategoryController {
                 .result(basketCategoryService.getOneBasketCategory(basketCategoryId))
                 .build();
     }
+    @PutMapping("/{basketCategoryId}")
+    ApiResponse<BasketCategoryResponse> updateBasketCategory(@PathVariable Long basketCategoryId, @RequestBody BasketCategoryRequest request){
+        return ApiResponse.<BasketCategoryResponse>builder()
+                .result(basketCategoryService.updateBasketCategory(basketCategoryId, request))
+                .build();
+    }
+
+    @DeleteMapping("/{basketCategoryId}")
+    ApiResponse<String> deleteBasketCategory(@PathVariable Long basketCategoryId){
+        return ApiResponse.<String>builder()
+                .result(basketCategoryService.deleteBasketCategory(basketCategoryId))
+                .build();
+    }
+
 }

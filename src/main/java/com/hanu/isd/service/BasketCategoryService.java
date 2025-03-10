@@ -42,5 +42,24 @@ public class BasketCategoryService {
         );
     }
 
+    // Sửa loại giỏ hàng
+    public BasketCategoryResponse updateBasketCategory(Long id, BasketCategoryRequest request) {
+        BasketCategory basketCategory = basketCategoryRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.BASKET_CATEGORY_NOT_EXISTED));
+        // Cập nhật thông tin từ request
+        basketCategory.setName(request.getName());
+        basketCategory.setDescription(request.getDescription());
+        // Lưu lại thay đổi
+        basketCategoryRepository.save(basketCategory);
 
+        return basketCategoryMapper.toBasketCategoryResponse(basketCategory);
+    }
+    //Xóa loại giỏ hàng
+    public String deleteBasketCategory(Long id) {
+        if (!basketCategoryRepository.existsById(id)) {
+            throw new AppException(ErrorCode.BASKET_CATEGORY_NOT_EXISTED);
+        }
+        basketCategoryRepository.deleteById(id);
+        return "Xóa thành công";
+    }
 }

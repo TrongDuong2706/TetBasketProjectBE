@@ -26,7 +26,7 @@ public class BasketCategory {
     @Column(name = "description")
     String description;
 
-    @OneToMany(mappedBy = "category")
+    @OneToMany(mappedBy = "category", cascade = CascadeType.PERSIST, orphanRemoval = false) // Không xóa Basket khi xóa BasketCategory
     Set<Basket> baskets;
 
 }

@@ -42,4 +42,22 @@ public class BasketShellService {
                 basketShellRepository.findById(id).orElseThrow(()-> new AppException(ErrorCode.BASKET_SHELL_NOT_EXISTED))
         );
     }
+    //Update BasketShell
+    public BasketShellResponse updateBasketShell(Long id, BasketShellRequest request){
+        BasketShell basketShell = basketShellRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.BASKET_SHELL_NOT_EXISTED));
+        basketShell.setName(request.getName());
+        basketShell.setDescription(request.getDescription());
+        basketShellRepository.save(basketShell);
+        return basketShellMapper.toBasketShellResponse(basketShell);
+    }
+
+    //delete
+    public String deleteBasketShell(Long id) {
+        if (!basketShellRepository.existsById(id)) {
+            throw new AppException(ErrorCode.BASKET_CATEGORY_NOT_EXISTED);
+        }
+        basketShellRepository.deleteById(id);
+        return "Xóa thành công";
+    }
 }

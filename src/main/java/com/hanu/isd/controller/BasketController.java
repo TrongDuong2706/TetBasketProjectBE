@@ -80,6 +80,12 @@ public class BasketController {
                 .result(baskets)
                 .build();
     }
+    @GetMapping("/getAllBasket")
+    public ApiResponse<List<BasketResponse>> getAllsBasket(){
+        return ApiResponse.<List<BasketResponse>>builder()
+                .result(basketService.getAllBasket())
+                .build();
+    }
 
 
 }

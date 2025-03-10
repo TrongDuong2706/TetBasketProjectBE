@@ -22,6 +22,7 @@ public enum ErrorCode {
     VOUCHER_NOT_EXISTED(1012, "Voucher not existed", HttpStatus.BAD_REQUEST),
     CANNOT_SEND_EMAIL(1013, "Cannot send email", HttpStatus.BAD_REQUEST),
     BASKET_SHELL_NOT_EXISTED(1014, "Basket Shell Not existed", HttpStatus.BAD_REQUEST),
+    ORDER_NOT_EXISTED(1015, "Order Not existed", HttpStatus.BAD_REQUEST),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

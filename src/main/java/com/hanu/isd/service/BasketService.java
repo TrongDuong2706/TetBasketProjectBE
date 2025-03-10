@@ -189,5 +189,10 @@ public class BasketService {
                 .build();
     }
 
+    public List<BasketResponse> getAllBasket(){
+        var basket = basketRepository.findAll();
+        return basket.stream().map(basketMapper::toBasketResponse).toList();
+    }
+
 
 }
