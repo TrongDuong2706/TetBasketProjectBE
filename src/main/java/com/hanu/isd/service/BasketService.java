@@ -213,5 +213,53 @@ public class BasketService {
                 .build();
     }
 
+    public PaginatedResponse<BasketResponse> getAllBasketCategory(
+            int page, int size){
+        PageRequest pageRequest = PageRequest.of(page,size);
+        Page<Basket> basketPage =
+                basketRepository.findAllBasketCategory(pageRequest);
+        List<BasketResponse> basketResponses = basketPage.getContent().stream().map(basketMapper::toBasketResponse).toList();
+        return PaginatedResponse.<BasketResponse>builder()
+                .totalItems((int)(basketPage.getTotalElements()))
+                .totalPages(basketPage.getTotalPages())
+                .currentPage(basketPage.getNumber())
+                .pageSize(basketPage.getSize())
+                .hasNextPage(basketPage.hasNext())
+                .hasPreviousPage(basketPage.hasPrevious())
+                .elements(basketResponses)
+                .build();
+    }
+
+    public PaginatedResponse<BasketResponse> getAllFilterAlcoholBasket(
+            String name,
+            BigDecimal minPrice,
+            BigDecimal maxPrice,
+            Long categoryId,
+            Integer status,
+            Long basketShellId,
+            Boolean hasAlcohol,
+            int page, int size) {
+
+        PageRequest pageRequest = PageRequest.of(page, size);
+
+        Page<Basket> basketPage = basketRepository.findByFilters(
+                name, minPrice, maxPrice, categoryId, status, basketShellId, hasAlcohol, pageRequest);
+
+        List<BasketResponse> basketResponses = basketPage.getContent().stream()
+                .map(basketMapper::toBasketResponse)
+                .toList();
+
+        return PaginatedResponse.<BasketResponse>builder()
+                .totalItems((int) basketPage.getTotalElements())
+                .totalPages(basketPage.getTotalPages())
+                .currentPage(basketPage.getNumber())
+                .pageSize(basketPage.getSize())
+                .hasNextPage(basketPage.hasNext())
+                .hasPreviousPage(basketPage.hasPrevious())
+                .elements(basketResponses)
+                .build();
+    }
+
+
 
 }

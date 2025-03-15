@@ -98,5 +98,40 @@ public class BasketController {
                 .build();
     }
 
+    @GetMapping("/getBasketByCategory")
+    public ApiResponse<PaginatedResponse<BasketResponse>> getBasketByCategory(@RequestParam(defaultValue = "1") int page,
+                                                                          @RequestParam(defaultValue = "4") int size
+                                                                         ){
+        int adjustedPage = Math.max(page - 1, 0);
+        var baskets = basketService.getAllBasketCategory(
+                adjustedPage, size);
+        return ApiResponse.<PaginatedResponse<BasketResponse>>builder()
+                .result(baskets)
+                .build();
+    }
+
+    @GetMapping("/getBasketByFilterAlcohol")
+    public ApiResponse<PaginatedResponse<BasketResponse>> getBasketByFilterAlcohol(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Integer status,
+            @RequestParam(required = false) Long basketShellId,
+            @RequestParam(required = false) Boolean hasAlcohol,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "4") int size) {
+
+        int adjustedPage = Math.max(page - 1, 0);
+
+        var baskets = basketService.getAllFilterAlcoholBasket(
+                name, minPrice, maxPrice, categoryId, status, basketShellId, hasAlcohol, adjustedPage, size);
+
+        return ApiResponse.<PaginatedResponse<BasketResponse>>builder()
+                .result(baskets)
+                .build();
+    }
+
+
 
 }
