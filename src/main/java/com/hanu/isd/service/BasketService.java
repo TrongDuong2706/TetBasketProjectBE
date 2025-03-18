@@ -47,7 +47,7 @@ public class BasketService {
         basket = basketRepository.save(basket);
 
         // Xử lý các hình ảnh (nếu có)
-        Set<BasketImage> basketImages = new HashSet<>();
+        List<BasketImage> basketImages = new ArrayList<>();
         if (files != null && !files.isEmpty()) {
             for (MultipartFile file : files) {
                 try {
@@ -131,7 +131,7 @@ public class BasketService {
             }
 
             // Tạo một tập hợp để lưu các đối tượng hình ảnh mới
-            Set<BasketImage> newImages = new HashSet<>();
+            List<BasketImage> newImages = new ArrayList<>();
             for (MultipartFile file : files) {
                 try {
                     // Tải hình ảnh lên Cloudinary
@@ -201,6 +201,25 @@ public class BasketService {
         PageRequest pageRequest = PageRequest.of(page,size);
         Page<Basket> basketPage =
                 basketRepository.findByName(name, pageRequest);
+        List<BasketResponse> basketResponses = basketPage.getContent().stream().map(basketMapper::toBasketResponse).toList();
+        return PaginatedResponse.<BasketResponse>builder()
+                .totalItems((int)(basketPage.getTotalElements()))
+                .totalPages(basketPage.getTotalPages())
+                .currentPage(basketPage.getNumber())
+                .pageSize(basketPage.getSize())
+                .hasNextPage(basketPage.hasNext())
+                .hasPreviousPage(basketPage.hasPrevious())
+                .elements(basketResponses)
+                .build();
+    }
+
+    //Lấy tất cả basket liên quan
+    public PaginatedResponse<BasketResponse> getAllRelatedBasket(
+            int page, int size,
+            Long categoryId){
+        PageRequest pageRequest = PageRequest.of(page,size);
+        Page<Basket> basketPage =
+                basketRepository.findAllRelatedBasket(categoryId, pageRequest);
         List<BasketResponse> basketResponses = basketPage.getContent().stream().map(basketMapper::toBasketResponse).toList();
         return PaginatedResponse.<BasketResponse>builder()
                 .totalItems((int)(basketPage.getTotalElements()))

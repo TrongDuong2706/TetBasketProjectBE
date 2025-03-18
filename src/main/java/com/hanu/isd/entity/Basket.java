@@ -7,6 +7,7 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import java.sql.Timestamp;
+import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -50,7 +51,8 @@ public class Basket {
     BasketShell basketShell;
 
     @OneToMany(mappedBy = "basket", cascade = CascadeType.ALL, orphanRemoval = true)
-    Set<BasketImage> images;
+    @OrderBy("id ASC") // Đảm bảo thứ tự hình ảnh theo ID tăng dần
+    List<BasketImage> images;
     @OneToMany(mappedBy = "basket", cascade = CascadeType.ALL, orphanRemoval = true)
     Set<CartItem> cartItems;
     @OneToMany(mappedBy = "basket", cascade = CascadeType.ALL, orphanRemoval = true)

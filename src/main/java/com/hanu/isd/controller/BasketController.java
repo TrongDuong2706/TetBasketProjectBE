@@ -97,6 +97,16 @@ public class BasketController {
                 .result(baskets)
                 .build();
     }
+    @GetMapping("/getAllBasketRelated")
+    public ApiResponse<PaginatedResponse<BasketResponse>> getAllBasketRelated(@RequestParam(defaultValue = "1") int page,
+                                                                          @RequestParam(defaultValue = "4") int size,
+                                                                          @RequestParam(required = false) Long categoryId){
+        int adjustedPage = Math.max(page - 1, 0);
+        var baskets = basketService.getAllRelatedBasket(adjustedPage, size, categoryId);
+        return ApiResponse.<PaginatedResponse<BasketResponse>>builder()
+                .result(baskets)
+                .build();
+    }
 
     @GetMapping("/getBasketByCategory")
     public ApiResponse<PaginatedResponse<BasketResponse>> getBasketByCategory(@RequestParam(defaultValue = "1") int page,
