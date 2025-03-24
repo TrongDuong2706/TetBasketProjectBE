@@ -2,6 +2,7 @@ package com.hanu.isd.controller;
 
 import com.hanu.isd.dto.request.ApiResponse;
 import com.hanu.isd.dto.request.CartRequest;
+import com.hanu.isd.dto.request.UpdateCartItemRequest;
 import com.hanu.isd.dto.response.CartItemResponse;
 import com.hanu.isd.dto.response.CartResponse;
 import com.hanu.isd.service.CartService;
@@ -27,10 +28,23 @@ public class CartController {
                 .build();
     }
     //Lấy tất cả sản phẩm trong giỏ hàng
-    @GetMapping("/{cardId}")
-    public ApiResponse<List<CartItemResponse>> getAddCartItem(@PathVariable Long cardId){
+    @GetMapping("/{userId}")
+    public ApiResponse<List<CartItemResponse>> getAddCartItem(@PathVariable String userId){
         return ApiResponse.<List<CartItemResponse>>builder()
-                .result(cartService.getCartItemsByCartId(cardId))
+                .result(cartService.getCartItemsByUserId(userId))
+                .build();
+    }
+    @PutMapping()
+    public ApiResponse<CartResponse> updateCartItemQuantity(
+            @RequestBody UpdateCartItemRequest request) {
+        return ApiResponse.<CartResponse>builder()
+                .result(cartService.updateCartItemQuantity(request))
+                .build();
+    }
+    @DeleteMapping("/{userId}/items/{basketId}")
+    public ApiResponse<CartResponse> deleteCartItem(@PathVariable String userId, @PathVariable Long basketId){
+        return ApiResponse.<CartResponse>builder()
+                .result(cartService.removeCartItem(userId, basketId))
                 .build();
     }
 }

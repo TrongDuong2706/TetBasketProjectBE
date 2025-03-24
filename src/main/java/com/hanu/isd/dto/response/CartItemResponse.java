@@ -3,6 +3,8 @@ package com.hanu.isd.dto.response;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -14,4 +16,5 @@ public class CartItemResponse {
     String name;  // Tên sản phẩm
     Double price;  // Giá sản phẩm
     int quantity;  // Số lượng sản phẩm trong giỏ hàng
+    List<String> imageUrls;
 }

@@ -40,6 +40,16 @@ public class OrderController {
                 .result(orderService.getAllOrder(page,size, fullName, minPrice, maxPrice))
                 .build();
     }
+    //Lấy tất cả order dựa theo userId
+    @GetMapping("/check/{userId}")
+    public ApiResponse<PaginatedResponse<OrderResponse>> getAllOrderByUserId(@PathVariable String userId, @RequestParam(defaultValue = "1") int page,
+                                                                             @RequestParam(defaultValue = "4") int size){
+        return ApiResponse.<PaginatedResponse<OrderResponse>>builder()
+                .result(orderService.getAllOrderByUserId( page, size, userId))
+                .build();
+    }
+
+
     @GetMapping("/{orderId}")
     public ApiResponse<List<OrderItemResponse>> getAllItemByOrderId(@PathVariable Long orderId){
         return ApiResponse.<List<OrderItemResponse>>builder()
@@ -51,6 +61,12 @@ public class OrderController {
     public ApiResponse<OrderResponse> getOneOrderById(@PathVariable Long orderId){
         return ApiResponse.<OrderResponse>builder()
                 .result(orderService.getOneOrder(orderId))
+                .build();
+    }
+    @PutMapping("/{orderId}")
+    public ApiResponse<OrderResponse> changeStatus(@PathVariable Long orderId){
+        return ApiResponse.<OrderResponse>builder()
+                .result(orderService.changeOrderStatus(orderId))
                 .build();
     }
 }

@@ -34,6 +34,13 @@ public class VoucherService {
         voucherRepository.save(voucher);
         return voucherMapper.toVoucherResponse(voucher);
     }
+
+    public VoucherResponse updateVoucher(VoucherRequest request,Long voucherId ){
+        Voucher voucher = voucherRepository.findById(voucherId).orElseThrow(() -> new AppException(ErrorCode.VOUCHER_NOT_FOUND));
+        voucherMapper.updateVoucher(voucher,request);
+        voucherRepository.save(voucher);
+        return voucherMapper.toVoucherResponse(voucher);
+    }
     //Get All Voucher
     public List<VoucherResponse> getAllVoucher(){
         var voucher = voucherRepository.findAll();
@@ -44,75 +51,72 @@ public class VoucherService {
         var voucher = voucherRepository.findById(voucherId).orElseThrow(()-> new AppException(ErrorCode.VOUCHER_NOT_EXISTED));
         return voucherMapper.toVoucherResponse(voucher);
     }
+
+    public String deleteVoucher(Long voucherId){
+
+        if (!voucherRepository.existsById(voucherId)) {
+            throw new AppException(ErrorCode.VOUCHER_NOT_EXISTED);
+        }
+        voucherRepository.deleteById(voucherId);
+        return "xóa thành công";
+    }
     //Apply Voucher
-    public ApplyVoucherResponse applyVoucher(ApplyVoucherRequest request, Double shippingFee) {
+    public ApplyVoucherResponse applyVoucher(ApplyVoucherRequest request) {
         Optional<Voucher> voucherOpt = voucherRepository.findByVoucherCode(request.getVoucherCode());
+
         if (voucherOpt.isEmpty()) {
             return ApplyVoucherResponse.builder()
                     .voucherCode(request.getVoucherCode())
                     .message("Voucher không tồn tại.")
                     .discountAmount(0.0)
-                    .newOrderAmount(request.getOrderAmount() + shippingFee) // Cộng ship trước
+                    .newOrderAmount(request.getOrderAmount())
                     .build();
         }
+
         Voucher voucher = voucherOpt.get();
+
         if (!"ACTIVE".equalsIgnoreCase(voucher.getStatus())) {
             return ApplyVoucherResponse.builder()
                     .voucherCode(voucher.getVoucherCode())
                     .message("Voucher không hợp lệ hoặc đã bị vô hiệu hóa.")
                     .discountAmount(0.0)
-                    .newOrderAmount(request.getOrderAmount() + shippingFee) // Cộng ship trước
+                    .newOrderAmount(request.getOrderAmount())
                     .build();
         }
 
-        // Kiểm tra ngày hết hạn
         if (voucher.getExpiryDate().before(new Date())) {
             return ApplyVoucherResponse.builder()
                     .voucherCode(voucher.getVoucherCode())
                     .message("Voucher đã hết hạn.")
                     .discountAmount(0.0)
-                    .newOrderAmount(request.getOrderAmount() + shippingFee) // Cộng ship trước
+                    .newOrderAmount(request.getOrderAmount())
                     .build();
         }
 
-        // Kiểm tra số lượng còn lại
         if (voucher.getQuantity() <= 0) {
             return ApplyVoucherResponse.builder()
                     .voucherCode(voucher.getVoucherCode())
                     .message("Voucher đã hết số lượng.")
                     .discountAmount(0.0)
-                    .newOrderAmount(request.getOrderAmount() + shippingFee) // Cộng ship trước
+                    .newOrderAmount(request.getOrderAmount())
                     .build();
         }
 
-        // Kiểm tra điều kiện đơn hàng tối thiểu
-        Double orderAmountWithShipping = request.getOrderAmount() + shippingFee; // Cộng ship trước
-        if (orderAmountWithShipping < voucher.getMinPurchaseAmount()) {
-            return ApplyVoucherResponse.builder()
-                    .voucherCode(voucher.getVoucherCode())
-                    .message("Đơn hàng chưa đạt mức tối thiểu để áp dụng voucher.")
-                    .discountAmount(0.0)
-                    .newOrderAmount(orderAmountWithShipping)
-                    .build();
+        if (request.getOrderAmount() < voucher.getMinPurchaseAmount()) {
+            throw new AppException(ErrorCode.VOUCHER_NOT_CRITERIA);
         }
 
         Double discountAmount = 0.0;
-        Double newOrderAmount = orderAmountWithShipping; // Cộng ship trước khi tính giảm giá
-
-        // Kiểm tra loại giảm giá
         if (voucher.getFixedDiscount() != null && voucher.getFixedDiscount() > 0) {
             discountAmount = voucher.getFixedDiscount();
         } else if (voucher.getDiscountPercentage() != null && voucher.getDiscountPercentage() > 0) {
-            discountAmount = orderAmountWithShipping * (voucher.getDiscountPercentage() / 100.0);
+            discountAmount = request.getOrderAmount() * (voucher.getDiscountPercentage() / 100.0);
         }
 
-        // Làm tròn discountAmount
-        discountAmount = Math.round(discountAmount * 100.0) / 100.0;  // Làm tròn đến 2 chữ số thập phân
+        discountAmount = Math.round(discountAmount * 100.0) / 100.0;
+        discountAmount = Math.min(discountAmount, request.getOrderAmount());
+        Double newOrderAmount = request.getOrderAmount() - discountAmount;
 
-        // Đảm bảo số tiền sau giảm giá không âm
-        newOrderAmount = Math.max(0, orderAmountWithShipping - discountAmount);
-
-        // Giảm số lượng voucher sau khi áp dụng thành công
         voucher.setQuantity(voucher.getQuantity() - 1);
         voucherRepository.save(voucher);
 
@@ -123,6 +127,8 @@ public class VoucherService {
                 .newOrderAmount(newOrderAmount)
                 .build();
     }
+
+
 
 
 }

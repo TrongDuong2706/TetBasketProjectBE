@@ -8,13 +8,8 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class OrderRequest {
+public class UpdateCartItemRequest {
     String userId;
-    Double totalAmount;
-    String voucherCode;
-    String fullName;
-    String email;
-    String phoneNumber;
-    String address;
-    String note;
+    Long basketId;
+    int quantityChange;
 }

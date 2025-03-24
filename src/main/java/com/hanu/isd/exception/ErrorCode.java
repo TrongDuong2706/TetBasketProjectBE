@@ -23,6 +23,12 @@ public enum ErrorCode {
     CANNOT_SEND_EMAIL(1013, "Cannot send email", HttpStatus.BAD_REQUEST),
     BASKET_SHELL_NOT_EXISTED(1014, "Basket Shell Not existed", HttpStatus.BAD_REQUEST),
     ORDER_NOT_EXISTED(1015, "Order Not existed", HttpStatus.BAD_REQUEST),
+    VOUCHER_NOT_CRITERIA(1016, "Không đủ điều kiện sử dụng voucher", HttpStatus.BAD_REQUEST),
+    CART_NOT_FOUND(1017, "Không tìm thấy giỏ hàng", HttpStatus.BAD_REQUEST),
+    CART_ITEM_NOT_FOUND(1018, "Không tìm thấy sản phẩm trong giỏ hàng", HttpStatus.BAD_REQUEST),
+    VOUCHER_NOT_FOUND(1019, "Không tìm thấy voucher", HttpStatus.BAD_REQUEST),
+    INVALID_REQUEST(1020, "Không thể cập nhập trạng thái", HttpStatus.BAD_REQUEST),
+    GREATER_THAN_QUANTITY(1020, "Số lượng hàng có sẵn không đủ", HttpStatus.BAD_REQUEST),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

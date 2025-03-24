@@ -41,10 +41,20 @@ public class VoucherController {
     }
     @PostMapping("/apply")
     ApiResponse<ApplyVoucherResponse> applyVoucher(@RequestBody ApplyVoucherRequest applyVoucherRequest) {
-        Double shippingFee = 30000.0; // Phí ship mặc định 30K, có thể lấy từ config nếu cần
-
         return ApiResponse.<ApplyVoucherResponse>builder()
-                .result(voucherService.applyVoucher(applyVoucherRequest, shippingFee)) // Truyền thêm shippingFee
+                .result(voucherService.applyVoucher(applyVoucherRequest)) // Truyền thêm shippingFee
+                .build();
+    }
+    @PutMapping("/{voucherId}")
+    ApiResponse<VoucherResponse> updateVoucher(@RequestBody VoucherRequest request, @PathVariable Long voucherId){
+        return ApiResponse.<VoucherResponse>builder()
+                .result(voucherService.updateVoucher(request, voucherId))
+                .build();
+    }
+    @DeleteMapping("/{voucherId}")
+    ApiResponse<String> deleteVoucher(@PathVariable Long voucherId){
+        return ApiResponse.<String>builder()
+                .result(voucherService.deleteVoucher(voucherId))
                 .build();
     }
 

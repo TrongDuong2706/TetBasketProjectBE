@@ -24,4 +24,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             @Param("maxPrice") BigDecimal maxPrice,
             Pageable pageable
     );
+
+    Page<Order> findByUserId(String userId, Pageable pageable);
+
 }

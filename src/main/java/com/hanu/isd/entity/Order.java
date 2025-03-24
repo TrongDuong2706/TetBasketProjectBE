@@ -58,4 +58,7 @@ public class Order {
 
     @Column()
     String address; // Địa chỉ giao hàng
+
+    @Column()
+    String note; //ghi chú cho order
 }

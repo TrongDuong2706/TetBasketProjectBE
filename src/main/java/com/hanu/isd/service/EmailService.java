@@ -33,7 +33,7 @@ public class EmailService {
                         .name("Luxy Tet Gift")
                         .email("vojungkook209@gmail.com")
                         .build())
-                .to(List.of(request.getTo()))
+                .to(request.getTo())
                 .subject(request.getSubject())
                 .htmlContent(request.getHtmlContent())
                 .build();

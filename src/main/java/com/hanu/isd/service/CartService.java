@@ -1,6 +1,7 @@
 package com.hanu.isd.service;
 
 import com.hanu.isd.dto.request.CartRequest;
+import com.hanu.isd.dto.request.UpdateCartItemRequest;
 import com.hanu.isd.dto.response.CartResponse;
 import com.hanu.isd.dto.response.CartItemResponse;
 import com.hanu.isd.entity.*;
@@ -17,10 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -41,7 +39,7 @@ public class CartService {
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
         Basket basket = basketRepository.findById(cartRequest.getBasketId())
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.BASKET_NOT_EXISTED));
 
         Cart cart = cartRepository.findByUser(user).orElseGet(() -> {
             Cart newCart = Cart.builder().user(user).items(new HashSet<>()).build();
@@ -49,6 +47,10 @@ public class CartService {
         });
 
         Optional<CartItem> existingItem = cartItemRepository.findByCartAndBasket(cart, basket);
+        int totalRequestedQuantity = cartRequest.getQuantity();
+        if (totalRequestedQuantity > basket.getQuantity()) {
+            throw new AppException(ErrorCode.GREATER_THAN_QUANTITY);
+        }
 
         if (existingItem.isPresent()) {
             CartItem cartItem = existingItem.get();
@@ -67,6 +69,47 @@ public class CartService {
         return convertToCartResponse(cart);
     }
 
+    @Transactional
+    public CartResponse updateCartItemQuantity(UpdateCartItemRequest request) {
+        // Tìm user
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        // Tìm cart của user
+        Cart cart = cartRepository.findByUser(user)
+                .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
+
+        // Tìm basket
+        Basket basket = basketRepository.findById(request.getBasketId())
+                .orElseThrow(() -> new AppException(ErrorCode.BASKET_NOT_EXISTED));
+
+        // Tìm cart item
+        CartItem cartItem = cartItemRepository.findByCartAndBasket(cart, basket)
+                .orElseThrow(() -> new AppException(ErrorCode.CART_ITEM_NOT_FOUND));
+
+        // Tính số lượng mới
+        int newQuantity = cartItem.getQuantity() + request.getQuantityChange();
+
+        if (newQuantity <= 0) {
+            // Nếu số lượng <= 0 thì xóa item khỏi cart
+            cart.getItems().remove(cartItem);
+            cartItemRepository.delete(cartItem);
+        } else {
+            // ✅ Kiểm tra nếu vượt quá số lượng có sẵn
+            if (newQuantity > basket.getQuantity()) {
+                throw new AppException(ErrorCode.GREATER_THAN_QUANTITY);
+            }
+
+            // Cập nhật số lượng mới
+            cartItem.setQuantity(newQuantity);
+            cartItemRepository.save(cartItem);
+        }
+
+        // Trả về response
+        return convertToCartResponse(cart);
+    }
+
+
     private CartResponse convertToCartResponse(Cart cart) {
         CartResponse cartResponse = cartMapper.toCartResponse(cart);
 
@@ -80,10 +123,45 @@ public class CartService {
     }
 
     //Lấy tất cả sản phẩm trong giỏ hàng
-    public List<CartItemResponse> getCartItemsByCartId(Long cartId) {
-        var cartItems = cartItemRepository.findByCartId(cartId);
+    public List<CartItemResponse> getCartItemsByUserId(String userId) {
+        // Lấy cart của user bằng userId
+        var cart = cartRepository.findByUserId(userId);
+
+        // Nếu không tìm thấy giỏ hàng, trả về danh sách rỗng
+        if (cart == null) {
+            return Collections.emptyList();
+        }
+
+        // Lấy các item từ cart và chuyển đổi thành CartItemResponse
+        var cartItems = cartItemRepository.findByCartId(cart.get().getId());
         return cartItems.stream()
                 .map(cartItemMapper::toCartItemResponse)
                 .collect(Collectors.toList());
     }
+
+    @Transactional
+    public CartResponse removeCartItem(String userId, Long basketId) {
+        // Tìm user
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        // Tìm cart của user
+        Cart cart = cartRepository.findByUser(user)
+                .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
+
+        // Tìm basket
+        Basket basket = basketRepository.findById(basketId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+
+        // Tìm cart item
+        CartItem cartItem = cartItemRepository.findByCartAndBasket(cart, basket)
+                .orElseThrow(() -> new AppException(ErrorCode.CART_ITEM_NOT_FOUND));
+
+        // Xóa item khỏi giỏ hàng
+        cart.getItems().remove(cartItem);
+        cartItemRepository.delete(cartItem);
+
+        return convertToCartResponse(cart);
+    }
+
 }
