@@ -47,4 +47,11 @@ public class CartController {
                 .result(cartService.removeCartItem(userId, basketId))
                 .build();
     }
+
+    @GetMapping("/count")
+    public ApiResponse<Integer> countItemInCart(@RequestParam String userId){
+        return ApiResponse.<Integer>builder()
+                .result(cartService.countTotalItemsInCart(userId))
+                .build();
+    }
 }

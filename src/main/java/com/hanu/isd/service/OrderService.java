@@ -16,6 +16,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -157,10 +158,9 @@ public class OrderService {
                 .build();
     }
 
-    public PaginatedResponse<OrderResponse> getAllOrderByUserId(int page, int size, String userId
-                                                        ) {
-        PageRequest pageRequest = PageRequest.of(page, size);
-        Page<Order> orders = orderRepository.findByUserId(userId, pageRequest);
+    public PaginatedResponse<OrderResponse> getAllOrderByUserId(int page, int size, String userId) {
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Order.desc("orderDate")));
+        Page<Order> orders = orderRepository.findByUserIdOrderByOrderDateDesc(userId, pageRequest);
 
         List<OrderResponse> orderResponses = orders.getContent().stream()
                 .map(order -> new OrderResponse(
@@ -191,6 +191,7 @@ public class OrderService {
                 .elements(orderResponses)
                 .build();
     }
+
 
 
 

@@ -25,6 +25,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             Pageable pageable
     );
 
-    Page<Order> findByUserId(String userId, Pageable pageable);
+    Page<Order> findByUserIdOrderByOrderDateDesc(String userId, Pageable pageable);
 
 }

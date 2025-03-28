@@ -164,4 +164,25 @@ public class CartService {
         return convertToCartResponse(cart);
     }
 
+    public Integer countTotalItemsInCart(String userId) {
+        // Tìm user
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        // Tìm cart của user
+        Cart cart = cartRepository.findByUser(user)
+                .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
+
+        // Nếu giỏ hàng rỗng thì trả về 0
+        if (cart.getItems() == null || cart.getItems().isEmpty()) {
+            return 0;
+        }
+
+        // Tính tổng số lượng từng item
+        return cart.getItems().stream()
+                .mapToInt(CartItem::getQuantity)
+                .sum();
+    }
+
+
 }
