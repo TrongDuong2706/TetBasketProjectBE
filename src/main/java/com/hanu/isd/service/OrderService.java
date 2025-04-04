@@ -297,6 +297,58 @@ public class OrderService {
                 order.getNote()
         );
     }
+    @Transactional
+    public OrderResponse cancelOrder(Long orderId) {
+        // Tìm đơn hàng theo orderId
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_EXISTED));
+
+        // Kiểm tra trạng thái hiện tại của đơn hàng
+        OrderStatus currentStatus = order.getOrderStatus();
+
+        // Chỉ cho phép hủy đơn hàng khi đơn hàng đang ở trạng thái PENDING
+        if (currentStatus != OrderStatus.PENDING) {
+            throw new AppException(ErrorCode.CANCEL_STATUS);
+        }
+
+        // Cập nhật trạng thái đơn hàng sang CANCELLED
+        order.setOrderStatus(OrderStatus.CANCELED);
+        orderRepository.save(order);
+
+        // Gửi email thông báo về việc hủy đơn hàng
+        String htmlContent = String.format("""
+        <h2>Thông báo hủy đơn hàng</h2>
+        <p>Xin chào %s,</p>
+        <p>Đơn hàng #%d của bạn đã bị hủy theo yêu cầu.</p>
+        <p>Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi.</p>
+    """, order.getFullName(), order.getId());
+
+        SendEmailRequest emailRequest = SendEmailRequest.builder()
+                .to(List.of(Recipient.builder().name(order.getFullName()).email(order.getEmail()).build()))
+                .subject("Hủy đơn hàng thành công")
+                .htmlContent(htmlContent)
+                .build();
+
+        emailService.sendEmail(emailRequest);
+
+        // Trả về thông tin đơn hàng đã bị hủy
+        return new OrderResponse(
+                order.getId(),
+                order.getUserId(),
+                order.getTotalAmount(),
+                order.getFinalAmount(),
+                order.getVoucherCode(),
+                order.getDiscountAmount(),
+                order.getShippingFee(),
+                order.getOrderStatus().toString(),
+                order.getOrderDate(),
+                order.getFullName(),
+                order.getEmail(),
+                order.getPhoneNumber(),
+                order.getAddress(),
+                order.getNote()
+        );
+    }
 
 
 

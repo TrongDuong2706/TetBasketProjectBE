@@ -29,6 +29,7 @@ public enum ErrorCode {
     VOUCHER_NOT_FOUND(1019, "Không tìm thấy voucher", HttpStatus.BAD_REQUEST),
     INVALID_REQUEST(1020, "Không thể cập nhập trạng thái", HttpStatus.BAD_REQUEST),
     GREATER_THAN_QUANTITY(1020, "Số lượng hàng có sẵn không đủ", HttpStatus.BAD_REQUEST),
+    CANCEL_STATUS(1021, "Chỉ có thể hủy đơn hàng nếu chưa được xác nhận", HttpStatus.BAD_REQUEST),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

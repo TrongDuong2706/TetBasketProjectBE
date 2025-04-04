@@ -69,4 +69,11 @@ public class OrderController {
                 .result(orderService.changeOrderStatus(orderId))
                 .build();
     }
+
+    @PutMapping("/cancel/{orderId}")
+    public ApiResponse<OrderResponse> cancelStatus(@PathVariable Long orderId){
+        return ApiResponse.<OrderResponse>builder()
+                .result(orderService.cancelOrder(orderId))
+                .build();
+    }
 }
