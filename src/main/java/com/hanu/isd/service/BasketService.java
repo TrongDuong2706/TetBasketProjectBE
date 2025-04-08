@@ -164,6 +164,9 @@ public class BasketService {
     //Xóa basket
     public String deleteBasket(Long id){
         Basket basket = basketRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.BASKET_NOT_EXISTED));
+        if (basket.getStatus() == 0) {
+            throw new AppException(ErrorCode.BASKET_ALREADY_DELETED);
+        }
         basket.setStatus(0);
         basketRepository.save(basket);
         return "Giỏ hàng đã hết hàng";

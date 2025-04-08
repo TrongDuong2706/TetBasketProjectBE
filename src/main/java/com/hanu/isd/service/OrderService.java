@@ -100,9 +100,46 @@ public class OrderService {
                         Recipient.builder().name("Chủ shop").email("trongdeptrai57@gmail.com").build()
                 ))
                 .subject("Thanks for your order")
-                .htmlContent("<p>Cảm ơn bạn đã đặt hàng!</p>")
+                .htmlContent("<html>" +
+                        "<head>" +
+                        "<style>" +
+                        "    body { font-family: Arial, sans-serif; background-color: #f4f4f4; color: #333; padding: 20px; }" +
+                        "    .container { max-width: 600px; margin: 0 auto; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }" +
+                        "    h2 { color: #4CAF50; }" +
+                        "    table { width: 100%; border-collapse: collapse; margin-top: 20px; }" +
+                        "    th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }" +
+                        "    th { background-color: #f4f4f4; }" +
+                        "    .footer { text-align: center; margin-top: 30px; font-size: 14px; color: #777; }" +
+                        "    .button { background-color: #4CAF50; color: white; padding: 10px 20px; text-align: center; text-decoration: none; border-radius: 4px; display: inline-block; margin-top: 20px; }" +
+                        "</style>" +
+                        "</head>" +
+                        "<body>" +
+                        "<div class=\"container\">" +
+                        "<h2>Cảm ơn bạn đã đặt hàng!</h2>" +
+                        "<p>Chúng tôi đã nhận được đơn hàng của bạn. Dưới đây là thông tin chi tiết:</p>" +
+
+                        "<table>" +
+                        "<tr><th>Thông tin khách hàng</th><th>Đơn hàng</th></tr>" +
+                        "<tr><td><b>Họ và tên:</b> " + request.getFullName() + "</td><td><b>Mã đơn hàng:</b> " + order.getId() + "</td></tr>" +
+                        "<tr><td><b>Email:</b> " + request.getEmail() + "</td><td><b>Tổng tiền:</b> " + order.getTotalAmount() + " VND</td></tr>" +
+                        "<tr><td><b>Số điện thoại:</b> " + request.getPhoneNumber() + "</td><td><b>Giảm giá:</b> " + order.getDiscountAmount() + " VND</td></tr>" +
+                        "<tr><td><b>Địa chỉ:</b> " + request.getAddress() + "</td><td><b>Phí vận chuyển:</b> " + order.getShippingFee() + " VND</td></tr>" +
+                        "<tr><td><b>Ghi chú:</b> " + request.getNote() + "</td><td><b>Trạng thái đơn hàng:</b> " + order.getOrderStatus().toString() + "</td></tr>" +
+                        "</table>" +
+
+                        "<p>Cảm ơn bạn đã tin tưởng và mua sắm tại cửa hàng của chúng tôi.</p>" +
+                        "<a href=\"#\" class=\"button\">Xem chi tiết đơn hàng</a>" +
+
+                        "<div class=\"footer\">" +
+                        "<p>Chúc bạn một ngày vui vẻ!</p>" +
+                        "</div>" +
+                        "</div>" +
+                        "</body>" +
+                        "</html>"
+                )
                 .build();
         emailService.sendEmail(sendEmailRequest);
+
 
         return new OrderResponse(
                 order.getId(),

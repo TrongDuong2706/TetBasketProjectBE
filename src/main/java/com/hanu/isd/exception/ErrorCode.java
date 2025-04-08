@@ -30,6 +30,11 @@ public enum ErrorCode {
     INVALID_REQUEST(1020, "Không thể cập nhập trạng thái", HttpStatus.BAD_REQUEST),
     GREATER_THAN_QUANTITY(1020, "Số lượng hàng có sẵn không đủ", HttpStatus.BAD_REQUEST),
     CANCEL_STATUS(1021, "Chỉ có thể hủy đơn hàng nếu chưa được xác nhận", HttpStatus.BAD_REQUEST),
+    BASKET_ALREADY_DELETED(1022, "Không thể xóa giỏ hàng", HttpStatus.BAD_REQUEST),
+    VOUCHER_INVALID_STATUS(1023, "Voucher đã bị vô hiệu hóa", HttpStatus.BAD_REQUEST),
+    VOUCHER_EXPIRED(1024, "Voucher quá hạn sử dụng", HttpStatus.BAD_REQUEST),
+    VOUCHER_OUT_OF_STOCK(1023, "Đã hết số lượng voucher", HttpStatus.BAD_REQUEST),
+
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

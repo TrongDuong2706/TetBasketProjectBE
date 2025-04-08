@@ -62,50 +62,40 @@ public class VoucherService {
     }
     //Apply Voucher
     public ApplyVoucherResponse applyVoucher(ApplyVoucherRequest request) {
+        // Kiểm tra voucherCode có tồn tại không
         Optional<Voucher> voucherOpt = voucherRepository.findByVoucherCode(request.getVoucherCode());
 
         if (voucherOpt.isEmpty()) {
-            return ApplyVoucherResponse.builder()
-                    .voucherCode(request.getVoucherCode())
-                    .message("Voucher không tồn tại.")
-                    .discountAmount(0.0)
-                    .newOrderAmount(request.getOrderAmount())
-                    .build();
+            // Ném ra AppException nếu voucherCode không tồn tại
+            throw new AppException(ErrorCode.VOUCHER_NOT_FOUND);
         }
 
         Voucher voucher = voucherOpt.get();
 
+        // Kiểm tra trạng thái voucher
         if (!"ACTIVE".equalsIgnoreCase(voucher.getStatus())) {
-            return ApplyVoucherResponse.builder()
-                    .voucherCode(voucher.getVoucherCode())
-                    .message("Voucher không hợp lệ hoặc đã bị vô hiệu hóa.")
-                    .discountAmount(0.0)
-                    .newOrderAmount(request.getOrderAmount())
-                    .build();
+            // Ném ra AppException nếu voucher không hợp lệ hoặc bị vô hiệu hóa
+            throw new AppException(ErrorCode.VOUCHER_INVALID_STATUS);
         }
 
+        // Kiểm tra ngày hết hạn của voucher
         if (voucher.getExpiryDate().before(new Date())) {
-            return ApplyVoucherResponse.builder()
-                    .voucherCode(voucher.getVoucherCode())
-                    .message("Voucher đã hết hạn.")
-                    .discountAmount(0.0)
-                    .newOrderAmount(request.getOrderAmount())
-                    .build();
+            // Ném ra AppException nếu voucher đã hết hạn
+            throw new AppException(ErrorCode.VOUCHER_EXPIRED);
         }
 
+        // Kiểm tra số lượng voucher
         if (voucher.getQuantity() <= 0) {
-            return ApplyVoucherResponse.builder()
-                    .voucherCode(voucher.getVoucherCode())
-                    .message("Voucher đã hết số lượng.")
-                    .discountAmount(0.0)
-                    .newOrderAmount(request.getOrderAmount())
-                    .build();
+            // Ném ra AppException nếu voucher đã hết số lượng
+            throw new AppException(ErrorCode.VOUCHER_OUT_OF_STOCK);
         }
 
+        // Kiểm tra giá trị đơn hàng
         if (request.getOrderAmount() < voucher.getMinPurchaseAmount()) {
             throw new AppException(ErrorCode.VOUCHER_NOT_CRITERIA);
         }
 
+        // Tính toán số tiền giảm giá
         Double discountAmount = 0.0;
         if (voucher.getFixedDiscount() != null && voucher.getFixedDiscount() > 0) {
             discountAmount = voucher.getFixedDiscount();
@@ -113,13 +103,16 @@ public class VoucherService {
             discountAmount = request.getOrderAmount() * (voucher.getDiscountPercentage() / 100.0);
         }
 
+        // Làm tròn số tiền giảm giá
         discountAmount = Math.round(discountAmount * 100.0) / 100.0;
         discountAmount = Math.min(discountAmount, request.getOrderAmount());
         Double newOrderAmount = request.getOrderAmount() - discountAmount;
 
+        // Cập nhật lại số lượng voucher
         voucher.setQuantity(voucher.getQuantity() - 1);
         voucherRepository.save(voucher);
 
+        // Trả về kết quả sau khi áp dụng voucher
         return ApplyVoucherResponse.builder()
                 .voucherCode(voucher.getVoucherCode())
                 .message("Voucher áp dụng thành công.")
@@ -127,6 +120,8 @@ public class VoucherService {
                 .newOrderAmount(newOrderAmount)
                 .build();
     }
+
+
 
 
 
