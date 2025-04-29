@@ -34,6 +34,7 @@ public enum ErrorCode {
     VOUCHER_INVALID_STATUS(1023, "Voucher đã bị vô hiệu hóa", HttpStatus.BAD_REQUEST),
     VOUCHER_EXPIRED(1024, "Voucher quá hạn sử dụng", HttpStatus.BAD_REQUEST),
     VOUCHER_OUT_OF_STOCK(1023, "Đã hết số lượng voucher", HttpStatus.BAD_REQUEST),
+    VOUCHER_EXISTED(1024, "Mã voucher đã tồn tại", HttpStatus.BAD_REQUEST),
 
     ;
 

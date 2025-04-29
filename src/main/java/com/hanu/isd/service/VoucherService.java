@@ -30,6 +30,10 @@ public class VoucherService {
 
     //Create Voucher
     public VoucherResponse createVoucher(VoucherRequest request){
+        Optional<Voucher> voucherOpt = voucherRepository.findByVoucherCode(request.getVoucherCode());
+        if (voucherOpt.isPresent()) {
+            throw new AppException(ErrorCode.VOUCHER_EXISTED);
+        }
         Voucher voucher = voucherMapper.toVoucher(request);
         voucherRepository.save(voucher);
         return voucherMapper.toVoucherResponse(voucher);
