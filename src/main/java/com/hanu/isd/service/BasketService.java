@@ -109,36 +109,51 @@ public class BasketService {
         Basket basket = basketRepository.findById(basketId)
                 .orElseThrow(() -> new AppException(ErrorCode.BASKET_NOT_EXISTED));
 
-        // Cập nhật thông tin giỏ hàng
+        // Cập nhật thông tin cơ bản từ request
         basketMapper.updateBasket(basket, basketRequest);
 
-        // Nếu có ảnh mới thì cập nhật, nếu không thì giữ ảnh cũ
+        // ✅ Cập nhật danh sách itemNames (xóa toàn bộ cũ, tạo lại mới)
+        basket.getItems().clear();
+
+        final Basket finalBasket = basket; // ✅ gán vào biến final
+
+        Set<Item> newItems = basketRequest.getItemNames().stream()
+                .map(name -> {
+                    Item item = new Item();
+                    item.setName(name);
+                    item.setBasket(finalBasket); // ✅ dùng biến final trong lambda
+                    return item;
+                })
+                .collect(Collectors.toSet());
+
+        basket.getItems().addAll(newItems);
+
+
+        // ✅ Xử lý ảnh
         if (files != null && !files.isEmpty()) {
-            // Xóa ảnh cũ trên Cloudinary nếu không giữ lại ảnh cũ
+            // Nếu không giữ ảnh cũ, xóa hết
             if (!keepExistingImages) {
                 for (BasketImage oldImage : basket.getImages()) {
                     try {
-                        String publicId = oldImage.getImageUrl().substring(oldImage.getImageUrl().lastIndexOf("/") + 1, oldImage.getImageUrl().lastIndexOf("."));
+                        String publicId = oldImage.getImageUrl()
+                                .substring(oldImage.getImageUrl().lastIndexOf("/") + 1, oldImage.getImageUrl().lastIndexOf("."));
                         cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
                     } catch (IOException e) {
                         log.error("Error deleting image from Cloudinary", e);
                     }
                 }
 
-                // Xóa tất cả các ảnh cũ khỏi cơ sở dữ liệu
                 basketImageRepository.deleteAll(basket.getImages());
                 basket.getImages().clear();
             }
 
-            // Tạo một tập hợp để lưu các đối tượng hình ảnh mới
+            // Tải ảnh mới lên Cloudinary
             List<BasketImage> newImages = new ArrayList<>();
             for (MultipartFile file : files) {
                 try {
-                    // Tải hình ảnh lên Cloudinary
                     Map<String, Object> uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
                     String url = uploadResult.get("url").toString();
 
-                    // Tạo và thiết lập đối tượng hình ảnh
                     BasketImage image = new BasketImage();
                     image.setImageUrl(url);
                     image.setBasket(basket);
@@ -147,15 +162,17 @@ public class BasketService {
                     log.error("Error uploading image to Cloudinary", e);
                 }
             }
+
             basket.getImages().addAll(newImages);
         }
 
-        // Lưu giỏ hàng sau khi cập nhật
+        // Lưu lại giỏ hàng đã cập nhật
         basket = basketRepository.save(basket);
 
-        // Chuyển đổi sang BasketResponse để trả về
+        // Trả về response
         return basketMapper.toBasketResponse(basket);
     }
+
     //Get One Basket
     public BasketResponse getOneBasket(Long id){
         return basketMapper.toBasketResponse(basketRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.BASKET_NOT_EXISTED)));
